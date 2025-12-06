@@ -1,103 +1,219 @@
-import Image from "next/image";
+"use client";
+
+import { MainLayout } from '@/components/layout/main-layout';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Users, Tag, MapPin, Truck, Package, DollarSign, Activity } from 'lucide-react';
+import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  // Datos simulados para los gráficos
+  const ventasPorDia = [
+    { dia: 'Lun', ventas: 4500 },
+    { dia: 'Mar', ventas: 5200 },
+    { dia: 'Mie', ventas: 4800 },
+    { dia: 'Jue', ventas: 6100 },
+    { dia: 'Vie', ventas: 7200 },
+    { dia: 'Sab', ventas: 3500 },
+    { dia: 'Dom', ventas: 2800 },
+  ];
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const productosMasVendidos = [
+    { nombre: 'Café', cantidad: 450, color: '#8B4513' },
+    { nombre: 'Sandwich', cantidad: 320, color: '#FFA500' },
+    { nombre: 'Jugos', cantidad: 280, color: '#FF6347' },
+    { nombre: 'Empanadas', cantidad: 200, color: '#FFD700' },
+    { nombre: 'Dulces', cantidad: 150, color: '#9370DB' },
+  ];
+
+  const ventasPorCampus = [
+    { campus: 'Campus I', ventas: 12500 },
+    { campus: 'Campus II', ventas: 9800 },
+    { campus: 'Campus III', ventas: 7200 },
+    { campus: 'Santiago', ventas: 5500 },
+  ];
+
+  const stats = [
+    {
+      title: 'Ventas Hoy',
+      value: 'RD$ 15,234',
+      change: '+12.5%',
+      icon: DollarSign,
+      color: 'text-green-600',
+      bgColor: 'bg-green-100',
+    },
+    {
+      title: 'Transacciones',
+      value: '142',
+      change: '+8.2%',
+      icon: Activity,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-100',
+    },
+    {
+      title: 'Productos Activos',
+      value: '86',
+      change: '+2.3%',
+      icon: Package,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-100',
+    },
+    {
+      title: 'Usuarios Activos',
+      value: '1,234',
+      change: '+15.3%',
+      icon: Users,
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-100',
+    },
+  ];
+
+  return (
+    <MainLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Dashboard - Sistema de Cafetería UNAPEC
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Resumen de actividad y estadísticas del día
+          </p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {stats.map((stat) => (
+            <Card key={stat.title}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  {stat.title}
+                </CardTitle>
+                <div className={`p-2 rounded-lg ${stat.bgColor}`}>
+                  <stat.icon className={`h-4 w-4 ${stat.color}`} />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stat.value}</div>
+                <p className="text-xs text-muted-foreground">
+                  <span className="text-green-600 font-medium">{stat.change}</span> vs. ayer
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Charts Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Ventas por día */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Ventas de la Semana</CardTitle>
+              <CardDescription>
+                Comparación de ventas diarias
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={ventasPorDia}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="dia" />
+                  <YAxis />
+                  <Tooltip formatter={(value) => `RD$ ${value}`} />
+                  <Legend />
+                  <Bar dataKey="ventas" fill="#3B82F6" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Productos más vendidos */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Top 5 Productos</CardTitle>
+              <CardDescription>
+                Productos más vendidos hoy
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={productosMasVendidos}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ nombre, cantidad }) => `${nombre}: ${cantidad}`}
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="cantidad"
+                  >
+                    {productosMasVendidos.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Ventas por Campus */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Ventas por Campus</CardTitle>
+            <CardDescription>
+              Distribución de ventas mensuales por ubicación
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={250}>
+              <LineChart data={ventasPorCampus}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="campus" />
+                <YAxis />
+                <Tooltip formatter={(value) => `RD$ ${value}`} />
+                <Legend />
+                <Line 
+                  type="monotone" 
+                  dataKey="ventas" 
+                  stroke="#10B981" 
+                  strokeWidth={3}
+                  dot={{ fill: '#10B981', r: 6 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card className="hover:shadow-lg transition-all cursor-pointer border-2 hover:border-blue-500">
+            <CardHeader className="text-center">
+              <Users className="h-8 w-8 mx-auto mb-2 text-blue-600" />
+              <CardTitle className="text-sm">Tipos de Usuarios</CardTitle>
+            </CardHeader>
+          </Card>
+          <Card className="hover:shadow-lg transition-all cursor-pointer border-2 hover:border-green-500">
+            <CardHeader className="text-center">
+              <Tag className="h-8 w-8 mx-auto mb-2 text-green-600" />
+              <CardTitle className="text-sm">Marcas</CardTitle>
+            </CardHeader>
+          </Card>
+          <Card className="hover:shadow-lg transition-all cursor-pointer border-2 hover:border-purple-500">
+            <CardHeader className="text-center">
+              <MapPin className="h-8 w-8 mx-auto mb-2 text-purple-600" />
+              <CardTitle className="text-sm">Campus</CardTitle>
+            </CardHeader>
+          </Card>
+          <Card className="hover:shadow-lg transition-all cursor-pointer border-2 hover:border-orange-500">
+            <CardHeader className="text-center">
+              <Truck className="h-8 w-8 mx-auto mb-2 text-orange-600" />
+              <CardTitle className="text-sm">Proveedores</CardTitle>
+            </CardHeader>
+          </Card>
+        </div>
+      </div>
+    </MainLayout>
   );
 }
