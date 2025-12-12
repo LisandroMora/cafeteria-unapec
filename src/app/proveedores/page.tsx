@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { DataTable } from "@/components/shared/data-table";
 import { CrudDialog } from "@/components/shared/crud-dialog";
@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Proveedor } from "@/types";
-import { proveedores as initialData } from "@/lib/mock-data";
+import { ProveedoresService } from "@/services/proveedores.service";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -24,13 +24,21 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 export default function ProveedoresPage() {
-  const [data, setData] = useState<Proveedor[]>(initialData);
+  const [data, setData] = useState<Proveedor[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Proveedor | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-  
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<Proveedor | null>(null);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = () => {
+    const items = ProveedoresService.getAll();
+    setData(items);
+  };
 
   const {
     register,
@@ -75,7 +83,8 @@ export default function ProveedoresPage() {
 
   const confirmDelete = () => {
     if (itemToDelete) {
-      setData(data.filter((d) => d.id !== itemToDelete.id));
+      ProveedoresService.delete(itemToDelete.id);
+      loadData();
       showMessage('success', 'El proveedor ha sido eliminado correctamente.');
       setDeleteConfirmOpen(false);
       setItemToDelete(null);
@@ -88,25 +97,19 @@ export default function ProveedoresPage() {
   };
 
   const onSubmit = (formData: FormData) => {
-    if (editingItem) {
-      setData(
-        data.map((item) =>
-          item.id === editingItem.id
-            ? { ...item, ...formData }
-            : item
-        )
-      );
-      showMessage('success', 'El proveedor ha sido actualizado correctamente.');
-    } else {
-      const newItem: Proveedor = {
-        id: Date.now().toString(),
-        ...formData,
-        fechaRegistro: new Date(),
-      };
-      setData([...data, newItem]);
-      showMessage('success', 'El proveedor ha sido creado correctamente.');
+    try {
+      if (editingItem) {
+        ProveedoresService.update(editingItem.id, formData);
+        showMessage('success', 'El proveedor ha sido actualizado correctamente.');
+      } else {
+        ProveedoresService.create(formData);
+        showMessage('success', 'El proveedor ha sido creado correctamente.');
+      }
+      loadData();
+      handleCloseDialog();
+    } catch (error) {
+      showMessage('error', 'Ocurrió un error al guardar los datos.');
     }
-    handleCloseDialog();
   };
 
   const handleCloseDialog = () => {

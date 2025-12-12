@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { DataTable } from "@/components/shared/data-table";
 import { CrudDialog } from "@/components/shared/crud-dialog";
@@ -16,8 +16,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Articulo } from "@/types";
-import { articulos as initialData, marcas, proveedores } from "@/lib/mock-data";
+import { Articulo, Marca, Proveedor } from "@/types";
+import { ArticulosService } from "@/services/articulos.service";
+import { MarcasService } from "@/services/marcas.service";
+import { ProveedoresService } from "@/services/proveedores.service";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -35,13 +37,27 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 export default function ArticulosPage() {
-  const [data, setData] = useState<Articulo[]>(initialData);
+  const [data, setData] = useState<Articulo[]>([]);
+  const [marcas, setMarcas] = useState<Marca[]>([]);
+  const [proveedores, setProveedores] = useState<Proveedor[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Articulo | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-  
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<Articulo | null>(null);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = () => {
+    const articulos = ArticulosService.getAll();
+    const marcasList = MarcasService.getAll();
+    const proveedoresList = ProveedoresService.getAll();
+    setData(articulos);
+    setMarcas(marcasList);
+    setProveedores(proveedoresList);
+  };
 
   const {
     register,
@@ -125,7 +141,8 @@ export default function ArticulosPage() {
 
   const confirmDelete = () => {
     if (itemToDelete) {
-      setData(data.filter((d) => d.id !== itemToDelete.id));
+      ArticulosService.delete(itemToDelete.id);
+      loadData();
       showMessage('success', 'El artículo ha sido eliminado correctamente.');
       setDeleteConfirmOpen(false);
       setItemToDelete(null);
@@ -138,24 +155,19 @@ export default function ArticulosPage() {
   };
 
   const onSubmit = (formData: FormData) => {
-    if (editingItem) {
-      setData(
-        data.map((item) =>
-          item.id === editingItem.id
-            ? { ...item, ...formData }
-            : item
-        )
-      );
-      showMessage('success', 'El artículo ha sido actualizado correctamente.');
-    } else {
-      const newItem: Articulo = {
-        id: Date.now().toString(),
-        ...formData,
-      };
-      setData([...data, newItem]);
-      showMessage('success', 'El artículo ha sido creado correctamente.');
+    try {
+      if (editingItem) {
+        ArticulosService.update(editingItem.id, formData);
+        showMessage('success', 'El artículo ha sido actualizado correctamente.');
+      } else {
+        ArticulosService.create(formData);
+        showMessage('success', 'El artículo ha sido creado correctamente.');
+      }
+      loadData();
+      handleCloseDialog();
+    } catch (error) {
+      showMessage('error', 'Ocurrió un error al guardar los datos.');
     }
-    handleCloseDialog();
   };
 
   const handleCloseDialog = () => {

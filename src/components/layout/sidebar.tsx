@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Coffee, Home, Users, Tag, MapPin, Truck, Menu, Store, Package, UserCheck, ShoppingCart } from 'lucide-react';
+import { Coffee, Home, Users, Tag, MapPin, Truck, Menu, Store, Package, UserCheck, ShoppingCart, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -59,6 +59,11 @@ const menuItems = [
     title: 'Ventas',
     href: '/ventas',
     icon: ShoppingCart,
+  },
+  {
+    title: 'Reportes',
+    href: '/reportes',
+    icon: FileText,
   },
 ];
 

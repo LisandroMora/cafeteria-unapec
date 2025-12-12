@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { DataTable } from "@/components/shared/data-table";
 import { CrudDialog } from "@/components/shared/crud-dialog";
@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Empleado } from "@/types";
-import { empleados as initialData } from "@/lib/mock-data";
+import { EmpleadosService } from "@/services/empleados.service";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -33,13 +33,21 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 export default function EmpleadosPage() {
-  const [data, setData] = useState<Empleado[]>(initialData);
+  const [data, setData] = useState<Empleado[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Empleado | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-  
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<Empleado | null>(null);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = () => {
+    const empleados = EmpleadosService.getAll();
+    setData(empleados);
+  };
 
   const {
     register,
@@ -79,7 +87,14 @@ export default function EmpleadosPage() {
       label: "Comisión",
       render: (value: number) => `${value}%`
     },
-    { key: "fechaIngreso" as keyof Empleado, label: "Fecha Ingreso" },
+    { 
+      key: "fechaIngreso" as keyof Empleado, 
+      label: "Fecha Ingreso",
+      render: (value: Date) => {
+        const date = new Date(value);
+        return date.toLocaleDateString('es-DO');
+      }
+    },
     { key: "estado" as keyof Empleado, label: "Estado" },
   ];
 
@@ -112,7 +127,8 @@ export default function EmpleadosPage() {
 
   const confirmDelete = () => {
     if (itemToDelete) {
-      setData(data.filter((d) => d.id !== itemToDelete.id));
+      EmpleadosService.delete(itemToDelete.id);
+      loadData();
       showMessage('success', 'El empleado ha sido eliminado correctamente.');
       setDeleteConfirmOpen(false);
       setItemToDelete(null);
@@ -125,25 +141,19 @@ export default function EmpleadosPage() {
   };
 
   const onSubmit = (formData: FormData) => {
-    if (editingItem) {
-      setData(
-        data.map((item) =>
-          item.id === editingItem.id
-            ? { ...item, ...formData }
-            : item
-        )
-      );
-      showMessage('success', 'El empleado ha sido actualizado correctamente.');
-    } else {
-      const newItem: Empleado = {
-        id: Date.now().toString(),
-        ...formData,
-        fechaIngreso: new Date(),
-      };
-      setData([...data, newItem]);
-      showMessage('success', 'El empleado ha sido creado correctamente.');
+    try {
+      if (editingItem) {
+        EmpleadosService.update(editingItem.id, formData);
+        showMessage('success', 'El empleado ha sido actualizado correctamente.');
+      } else {
+        EmpleadosService.create(formData);
+        showMessage('success', 'El empleado ha sido creado correctamente.');
+      }
+      loadData();
+      handleCloseDialog();
+    } catch (error) {
+      showMessage('error', 'Ocurrió un error al guardar los datos.');
     }
-    handleCloseDialog();
   };
 
   const handleCloseDialog = () => {

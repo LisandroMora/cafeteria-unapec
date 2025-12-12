@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { DataTable } from "@/components/shared/data-table";
 import { CrudDialog } from "@/components/shared/crud-dialog";
@@ -16,8 +16,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Usuario } from "@/types";
-import { usuarios as initialData, tiposUsuarios } from "@/lib/mock-data";
+import { Usuario, TipoUsuario } from "@/types";
+import { UsuariosService } from "@/services/usuarios.service";
+import { TiposUsuariosService } from "@/services/tipos-usuarios.service";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -33,13 +34,24 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 export default function UsuariosPage() {
-  const [data, setData] = useState<Usuario[]>(initialData);
+  const [data, setData] = useState<Usuario[]>([]);
+  const [tiposUsuarios, setTiposUsuarios] = useState<TipoUsuario[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Usuario | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-  
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<Usuario | null>(null);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = () => {
+    const usuarios = UsuariosService.getAll();
+    const tipos = TiposUsuariosService.getAll();
+    setData(usuarios);
+    setTiposUsuarios(tipos);
+  };
 
   const {
     register,
@@ -101,7 +113,8 @@ export default function UsuariosPage() {
 
   const confirmDelete = () => {
     if (itemToDelete) {
-      setData(data.filter((d) => d.id !== itemToDelete.id));
+      UsuariosService.delete(itemToDelete.id);
+      loadData();
       showMessage('success', 'El usuario ha sido eliminado correctamente.');
       setDeleteConfirmOpen(false);
       setItemToDelete(null);
@@ -114,25 +127,20 @@ export default function UsuariosPage() {
   };
 
   const onSubmit = (formData: FormData) => {
-    if (editingItem) {
-      setData(
-        data.map((item) =>
-          item.id === editingItem.id
-            ? { ...item, ...formData }
-            : item
-        )
-      );
-      showMessage('success', 'El usuario ha sido actualizado correctamente.');
-    } else {
-      const newItem: Usuario = {
-        id: Date.now().toString(),
-        ...formData,
-        fechaRegistro: new Date(),
-      };
-      setData([...data, newItem]);
-      showMessage('success', 'El usuario ha sido creado correctamente.');
+    try {
+      if (editingItem) {
+        UsuariosService.update(editingItem.id, formData);
+        showMessage('success', 'El usuario ha sido actualizado correctamente.');
+      } else {
+        UsuariosService.create(formData);
+        showMessage('success', 'El usuario ha sido creado correctamente.');
+      }
+      loadData();
+      handleCloseDialog();
+    } catch (error) {
+      console.error(error);
+      showMessage('error', 'Ocurrió un error al guardar los datos.');
     }
-    handleCloseDialog();
   };
 
   const handleCloseDialog = () => {

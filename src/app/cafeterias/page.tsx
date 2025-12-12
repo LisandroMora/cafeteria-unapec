@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { DataTable } from "@/components/shared/data-table";
 import { CrudDialog } from "@/components/shared/crud-dialog";
@@ -16,8 +16,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Cafeteria } from "@/types";
-import { cafeterias as initialData, campus } from "@/lib/mock-data";
+import { Cafeteria, Campus } from "@/types";
+import { CafeteriasService } from "@/services/cafeterias.service";
+import { CampusService } from "@/services/campus.service";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -32,13 +33,24 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 export default function CafeteriasPage() {
-  const [data, setData] = useState<Cafeteria[]>(initialData);
+  const [data, setData] = useState<Cafeteria[]>([]);
+  const [campus, setCampus] = useState<Campus[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Cafeteria | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-  
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<Cafeteria | null>(null);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = () => {
+    const cafeterias = CafeteriasService.getAll();
+    const campusList = CampusService.getAll();
+    setData(cafeterias);
+    setCampus(campusList);
+  };
 
   const {
     register,
@@ -92,7 +104,8 @@ export default function CafeteriasPage() {
 
   const confirmDelete = () => {
     if (itemToDelete) {
-      setData(data.filter((d) => d.id !== itemToDelete.id));
+      CafeteriasService.delete(itemToDelete.id);
+      loadData();
       showMessage('success', 'La cafetería ha sido eliminada correctamente.');
       setDeleteConfirmOpen(false);
       setItemToDelete(null);
@@ -105,24 +118,19 @@ export default function CafeteriasPage() {
   };
 
   const onSubmit = (formData: FormData) => {
-    if (editingItem) {
-      setData(
-        data.map((item) =>
-          item.id === editingItem.id
-            ? { ...item, ...formData }
-            : item
-        )
-      );
-      showMessage('success', 'La cafetería ha sido actualizada correctamente.');
-    } else {
-      const newItem: Cafeteria = {
-        id: Date.now().toString(),
-        ...formData,
-      };
-      setData([...data, newItem]);
-      showMessage('success', 'La cafetería ha sido creada correctamente.');
+    try {
+      if (editingItem) {
+        CafeteriasService.update(editingItem.id, formData);
+        showMessage('success', 'La cafetería ha sido actualizada correctamente.');
+      } else {
+        CafeteriasService.create(formData);
+        showMessage('success', 'La cafetería ha sido creada correctamente.');
+      }
+      loadData();
+      handleCloseDialog();
+    } catch (error) {
+      showMessage('error', 'Ocurrió un error al guardar los datos.');
     }
-    handleCloseDialog();
   };
 
   const handleCloseDialog = () => {

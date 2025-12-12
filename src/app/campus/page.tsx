@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { DataTable } from "@/components/shared/data-table";
 import { CrudDialog } from "@/components/shared/crud-dialog";
@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Campus } from "@/types";
-import { campus as initialData } from "@/lib/mock-data";
+import { CampusService } from "@/services/campus.service";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -23,13 +23,21 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 export default function CampusPage() {
-  const [data, setData] = useState<Campus[]>(initialData);
+  const [data, setData] = useState<Campus[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Campus | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-  
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<Campus | null>(null);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = () => {
+    const items = CampusService.getAll();
+    setData(items);
+  };
 
   const {
     register,
@@ -71,7 +79,8 @@ export default function CampusPage() {
 
   const confirmDelete = () => {
     if (itemToDelete) {
-      setData(data.filter((d) => d.id !== itemToDelete.id));
+      CampusService.delete(itemToDelete.id);
+      loadData();
       showMessage('success', 'El campus ha sido eliminado correctamente.');
       setDeleteConfirmOpen(false);
       setItemToDelete(null);
@@ -84,24 +93,19 @@ export default function CampusPage() {
   };
 
   const onSubmit = (formData: FormData) => {
-    if (editingItem) {
-      setData(
-        data.map((item) =>
-          item.id === editingItem.id
-            ? { ...item, ...formData }
-            : item
-        )
-      );
-      showMessage('success', 'El campus ha sido actualizado correctamente.');
-    } else {
-      const newItem: Campus = {
-        id: Date.now().toString(),
-        ...formData,
-      };
-      setData([...data, newItem]);
-      showMessage('success', 'El campus ha sido creado correctamente.');
+    try {
+      if (editingItem) {
+        CampusService.update(editingItem.id, formData);
+        showMessage('success', 'El campus ha sido actualizado correctamente.');
+      } else {
+        CampusService.create(formData);
+        showMessage('success', 'El campus ha sido creado correctamente.');
+      }
+      loadData();
+      handleCloseDialog();
+    } catch (error) {
+      showMessage('error', 'Ocurrió un error al guardar los datos.');
     }
-    handleCloseDialog();
   };
 
   const handleCloseDialog = () => {

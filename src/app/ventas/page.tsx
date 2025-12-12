@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,13 +23,19 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Venta, VentaItem, Articulo, Usuario, Empleado } from "@/types";
-import { ventas as initialVentas, articulos, usuarios, empleados } from "@/lib/mock-data";
+import { VentasService } from "@/services/ventas.service";
+import { ArticulosService } from "@/services/articulos.service";
+import { UsuariosService } from "@/services/usuarios.service";
+import { EmpleadosService } from "@/services/empleados.service";
 import { ShoppingCart, Plus, Trash2, Search, Save, X } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
 export default function VentasPage() {
-  const [ventas, setVentas] = useState<Venta[]>(initialVentas);
+  const [ventas, setVentas] = useState<Venta[]>([]);
+  const [articulos, setArticulos] = useState<Articulo[]>([]);
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [empleados, setEmpleados] = useState<Empleado[]>([]);
   const [showNewVenta, setShowNewVenta] = useState(false);
   const [selectedEmpleado, setSelectedEmpleado] = useState("");
   const [selectedUsuario, setSelectedUsuario] = useState("");
@@ -37,6 +43,18 @@ export default function VentasPage() {
   const [selectedArticulo, setSelectedArticulo] = useState("");
   const [cantidad, setCantidad] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = () => {
+    setVentas(VentasService.getAll());
+    setArticulos(ArticulosService.getAll());
+    setUsuarios(UsuariosService.getAll());
+    setEmpleados(EmpleadosService.getAll());
+  };
 
   const filteredVentas = ventas.filter(venta => {
     const usuario = usuarios.find(u => u.id === venta.usuarioId);
@@ -56,12 +74,26 @@ export default function VentasPage() {
     const articulo = articulos.find(a => a.id === selectedArticulo);
     if (!articulo) return;
 
+    // Verificar existencia
+    if (articulo.existencia < cantidad) {
+      showMessage('error', `No hay suficiente existencia. Disponible: ${articulo.existencia}`);
+      return;
+    }
+
     const existingItemIndex = currentItems.findIndex(item => item.articuloId === selectedArticulo);
     
     if (existingItemIndex >= 0) {
       const updatedItems = [...currentItems];
-      updatedItems[existingItemIndex].cantidad += cantidad;
-      updatedItems[existingItemIndex].subtotal = updatedItems[existingItemIndex].cantidad * articulo.precio;
+      const nuevaCantidad = updatedItems[existingItemIndex].cantidad + cantidad;
+      
+      // Verificar existencia con la nueva cantidad
+      if (articulo.existencia < nuevaCantidad) {
+        showMessage('error', `No hay suficiente existencia. Disponible: ${articulo.existencia}`);
+        return;
+      }
+      
+      updatedItems[existingItemIndex].cantidad = nuevaCantidad;
+      updatedItems[existingItemIndex].subtotal = nuevaCantidad * articulo.precio;
       setCurrentItems(updatedItems);
     } else {
       const newItem: VentaItem = {
@@ -82,36 +114,32 @@ export default function VentasPage() {
     setCurrentItems(currentItems.filter(item => item.articuloId !== articuloId));
   };
 
+  const showMessage = (type: 'success' | 'error', text: string) => {
+    setMessage({ type, text });
+    setTimeout(() => setMessage(null), 3000);
+  };
+
   const guardarVenta = () => {
     if (!selectedEmpleado || !selectedUsuario || currentItems.length === 0) {
-      alert("Por favor complete todos los campos y agregue al menos un artículo");
+      showMessage('error', 'Por favor complete todos los campos y agregue al menos un artículo');
       return;
     }
 
-    const numeroFactura = `F-${String(ventas.length + 1).padStart(3, '0')}-${new Date().getFullYear()}`;
-    
-    const nuevaVenta: Venta = {
-      id: Date.now().toString(),
-      numeroFactura,
-      empleadoId: selectedEmpleado,
-      usuarioId: selectedUsuario,
-      fecha: new Date(),
-      items: currentItems,
-      total: calcularTotal(),
-      estado: 'completada',
-    };
+    try {
+      VentasService.create({
+        empleadoId: selectedEmpleado,
+        usuarioId: selectedUsuario,
+        items: currentItems,
+        total: calcularTotal(),
+        estado: 'completada',
+      });
 
-    setVentas([...ventas, nuevaVenta]);
-    
-    // Actualizar existencias (en una app real esto sería en el backend)
-    currentItems.forEach(item => {
-      const articuloIndex = articulos.findIndex(a => a.id === item.articuloId);
-      if (articuloIndex >= 0) {
-        articulos[articuloIndex].existencia -= item.cantidad;
-      }
-    });
-
-    limpiarFormulario();
+      showMessage('success', 'Venta registrada exitosamente');
+      loadData();
+      limpiarFormulario();
+    } catch (error) {
+      showMessage('error', 'Error al registrar la venta');
+    }
   };
 
   const limpiarFormulario = () => {
@@ -124,18 +152,30 @@ export default function VentasPage() {
   };
 
   const anularVenta = (ventaId: string) => {
-    if (confirm("¿Está seguro de anular esta venta?")) {
-      setVentas(ventas.map(venta => 
-        venta.id === ventaId 
-          ? { ...venta, estado: 'anulada' as const }
-          : venta
-      ));
+    if (confirm("¿Está seguro de anular esta venta? Se restaurará el inventario.")) {
+      const success = VentasService.anular(ventaId);
+      if (success) {
+        showMessage('success', 'Venta anulada exitosamente');
+        loadData();
+      } else {
+        showMessage('error', 'Error al anular la venta');
+      }
     }
   };
 
   if (showNewVenta) {
     return (
       <MainLayout>
+        {message && (
+          <div className={`mb-4 p-4 rounded-md ${
+            message.type === 'success' 
+              ? 'bg-green-100 text-green-800 border border-green-200' 
+              : 'bg-red-100 text-red-800 border border-red-200'
+          }`}>
+            {message.text}
+          </div>
+        )}
+        
         <div className="space-y-6">
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-bold">Nueva Venta</h2>
@@ -306,6 +346,16 @@ export default function VentasPage() {
 
   return (
     <MainLayout>
+      {message && (
+        <div className={`mb-4 p-4 rounded-md ${
+          message.type === 'success' 
+            ? 'bg-green-100 text-green-800 border border-green-200' 
+            : 'bg-red-100 text-red-800 border border-red-200'
+        }`}>
+          {message.text}
+        </div>
+      )}
+      
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h2 className="text-2xl font-bold">Ventas</h2>
@@ -355,7 +405,7 @@ export default function VentasPage() {
                       <TableRow key={venta.id}>
                         <TableCell className="font-medium">{venta.numeroFactura}</TableCell>
                         <TableCell>
-                          {format(venta.fecha, "dd/MM/yyyy HH:mm", { locale: es })}
+                          {format(new Date(venta.fecha), "dd/MM/yyyy HH:mm", { locale: es })}
                         </TableCell>
                         <TableCell>{usuario?.nombre}</TableCell>
                         <TableCell>{empleado?.nombre}</TableCell>

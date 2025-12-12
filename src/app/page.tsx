@@ -26,24 +26,24 @@ export default function Home() {
   ];
 
   const ventasPorCampus = [
-    { campus: 'Campus I', ventas: 12500 },
-    { campus: 'Campus II', ventas: 9800 },
-    { campus: 'Campus III', ventas: 7200 },
+    { campus: 'Campus I', ventas: 5000 },
+    { campus: 'Campus II', ventas: 1200 },
+    { campus: 'Campus III', ventas: 9000 },
     { campus: 'Santiago', ventas: 5500 },
   ];
 
   const stats = [
     {
       title: 'Ventas Hoy',
-      value: 'RD$ 15,234',
-      change: '+12.5%',
+      value: 'RD$ 5,234',
+      change: '+2.5%',
       icon: DollarSign,
       color: 'text-green-600',
       bgColor: 'bg-green-100',
     },
     {
       title: 'Transacciones',
-      value: '142',
+      value: '12',
       change: '+8.2%',
       icon: Activity,
       color: 'text-blue-600',
@@ -51,7 +51,7 @@ export default function Home() {
     },
     {
       title: 'Productos Activos',
-      value: '86',
+      value: '15',
       change: '+2.3%',
       icon: Package,
       color: 'text-purple-600',
@@ -59,7 +59,7 @@ export default function Home() {
     },
     {
       title: 'Usuarios Activos',
-      value: '1,234',
+      value: '14',
       change: '+15.3%',
       icon: Users,
       color: 'text-orange-600',
@@ -100,62 +100,6 @@ export default function Home() {
               </CardContent>
             </Card>
           ))}
-        </div>
-
-        {/* Charts Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Ventas por día */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Ventas de la Semana</CardTitle>
-              <CardDescription>
-                Comparación de ventas diarias
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={ventasPorDia}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="dia" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => `RD$ ${value}`} />
-                  <Legend />
-                  <Bar dataKey="ventas" fill="#3B82F6" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Productos más vendidos */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Top 5 Productos</CardTitle>
-              <CardDescription>
-                Productos más vendidos hoy
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={productosMasVendidos}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ nombre, cantidad }) => `${nombre}: ${cantidad}`}
-                    outerRadius={100}
-                    fill="#8884d8"
-                    dataKey="cantidad"
-                  >
-                    {productosMasVendidos.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Ventas por Campus */}
